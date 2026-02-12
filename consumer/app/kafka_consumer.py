@@ -3,6 +3,7 @@ import os
 import json
 from confluent_kafka import Consumer
 from confluent_kafka.admin import AdminClient, NewTopic
+from dal import insert_doc
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +51,8 @@ def consume_loop(consumer):
                 logger.error(msg.error())
                 continue
 
-            result = handle_message(msg)
+            docs = handle_message(msg)
+            insert_doc(docs)
 
     finally:
         consumer.close()
