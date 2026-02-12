@@ -1,7 +1,7 @@
-from mysql_connection import get_connection
+from mysql_connection import DBConnection
 
 
-cnx = get_connection()
+cnx = DBConnection().get_connection()
 
 
 def init_db():

@@ -1,9 +1,9 @@
-from mysql_connection import get_connection
+from mysql_connection import DBConnection
 from utils import make_doc_to_row
 
 
 
-cnx = get_connection()
+cnx = DBConnection().get_connection()
 
 
 
