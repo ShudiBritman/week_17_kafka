@@ -32,3 +32,5 @@ def init_db():
     `comments` varchar(50),
     `customerNumber` INT FOREIGN KEY REFERENCES customers(customerNumber))'''
     cursor.execute(query)
+    cursor.commit()
+    cnx.close()
