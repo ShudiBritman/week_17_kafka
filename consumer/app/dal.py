@@ -1,4 +1,5 @@
 from mysql_connection import get_connection
+from utils import make_doc_to_row
 
 
 
@@ -8,20 +9,23 @@ cnx = get_connection()
 
 
 def insert_doc(docs):
-    keys = docs[0].keys()
-    columns = ", ".join(keys)
-    placeholders = ", ".join(["%s"] * len(keys))
-    values = [tuple(item[k] for k in keys) for item in docs]
-    customers_values = []
-    orders_values = []
-    for row in values:
-        if 'customer' in row:
-            customers_values.append(row)
+    order_values = []
+    customer_values = []
+    for doc in docs:
+        if doc['type'] == "orders":
+            result = make_doc_to_row(doc)
+            orders_columns_keys = result[0]
+            order_values.append(result[1])
+            orders_placeholders = ", ".join(["%s"] * len(result[2]))
         else:
-            orders_values.append(row)
-    query = f"INSERT INTO customers ({columns}) VALUES ({placeholders})"
-    cursor = cnx.exeutemany(query, values)
-    query = f"INSERT INTO orders ({columns}) VALUES ({placeholders})"
+            result = make_doc_to_row(doc)
+            customers_columns_keys = result[0]
+            customer_values.append(result[1])
+            customer_placeholders = ", ".join(["%s"] * len(result[2]))
+    query = f"INSERT INTO customers ({customers_columns_keys}) VALUES ({customer_placeholders})"
+    cursor = cnx.exeutemany(query, customer_values)
+    query = f"INSERT INTO orders ({orders_columns_keys}) VALUES ({orders_placeholders})"
+    cursor = cnx.exeutemany(query, order_values)
     cursor.commit()
     cnx.close()
 
