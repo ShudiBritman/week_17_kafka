@@ -1,31 +1,51 @@
 from confluent_kafka import Producer
-from mongo_connection import MongoConnection
+import logging
 import json
 
-def get_collection():
-    return MongoConnection().get_collection()
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 
 producer_config = {
-    "bootstrap.servers": "kafak:9092"
-}
- 
+    'bootstrap.servers':'kafka:9092',
+    'acks':'all'}
+
+
 producer = Producer(producer_config)
+logger = logging.getLogger(__name__)
 
 def delivery_report(err, msg):
     if err:
-        print(f"Delivery failed: {err}")
+        logger.error("Delivery failed: %s", err)
     else:
-        print(f"Delivered {msg.value().decode("utf-8")}")
-        print(f"Delivered to {msg.topic()} : partition {msg.partition()} : at offset {msg.offset()}")
+        logger.info(
+            "Delivered message: %s",
+            msg.value().decode("utf-8")
+        )
+        logger.info(
+            "Delivered to %s | partition %s | offset %s",
+            msg.topic(),
+            msg.partition(),
+            msg.offset()
+        )
 
 
 
-def send_to_kafka(data):
-    producer.produce(
-    topic="orders",
-    value=data,
-    callback=delivery_report
-    )
+def send_event_to_kafka(event):
+        value = json.dumps(event)
+        producer.produce(
+            topic='users_posts.registered',
+            value=value,
+            callback=delivery_report
+        )
+        logger.info("seeding from file in batches of 10 every 5 seconds")
+        producer.poll(0)
 
-producer.flush()
+
+        producer.flush()
+        return 
+
+
+
