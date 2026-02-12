@@ -1,0 +1,110 @@
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:29093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      CLUSTER_ID: 1L6g7nGhU-eAKLJ9W9KZxA
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "bash", "-c", "nc -z localhost 9092"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+
+
+  consumer:
+    build: ./consumer
+    container_name: consumer
+    environment:
+      KAFKA_BOOTSTRAP: kafka:9092
+      TOPIC_NAME: users.registered
+
+      SQL_HOST: mysql
+      SQL_PORT: 3306
+      SQL_USER: user123
+      SQL_PASSWORD: etl_pass
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - backend
+
+
+    producer:
+    build: ./producer
+    container_name: consumer
+    environment:
+      MONGO_URI: mongodb://localhost:27017 
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - backend
+
+  
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root_etl_pass
+      MYSQL_DATABASE: users_posts
+      MYSQL_USER: user123
+      MYSQL_PASSWORD: etl_pass
+
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - backend
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot_etl_pass"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  mongo_data:
+  kafka_data:
+  mysql_data:
