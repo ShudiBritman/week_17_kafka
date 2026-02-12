@@ -32,3 +32,4 @@ class MongoConnection:
     def get_collection(self):
         db = self.get_db()
         return db['users_orders']
+    
