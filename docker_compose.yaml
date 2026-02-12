@@ -48,12 +48,12 @@ services:
     container_name: consumer
     environment:
       KAFKA_BOOTSTRAP: kafka:9092
-      TOPIC_NAME: users.registered
+      TOPIC_NAME: 'users_posts.registered'
 
       SQL_HOST: mysql
       SQL_PORT: 3306
       SQL_USER: user123
-      SQL_PASSWORD: etl_pass
+      SQL_PASSWORD: pass123
     depends_on:
       kafka:
         condition: service_healthy
@@ -81,9 +81,8 @@ services:
       - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: root_etl_pass
-      MYSQL_DATABASE: users_posts
       MYSQL_USER: user123
-      MYSQL_PASSWORD: etl_pass
+      MYSQL_PASSWORD: pass123
 
     volumes:
       - mysql_data:/var/lib/mysql
